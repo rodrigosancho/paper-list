@@ -50,7 +50,8 @@ Orderable list
             </span>
         </paper-input>
         <sortable-js id="list"
-                     handle=".handler">
+                     handle=".handler"
+                     on-end="_onSortableEnd">
             <template id="repeater"
                       is="dom-repeat"
                       items="{{ value }}">
@@ -105,12 +106,23 @@ Orderable list
             ],
 
             keyBindings: {
-                'enter': '_onEnter',
-                'up': '_onMoveUp',
-                'down': '_onMoveDown',
-                'backspace': '_onBackspace',
-                'del': '_onDel'
+                'enter:keydown': '_onEnter',
+                'up:keydown': '_onMoveUp',
+                'down:keydown': '_onMoveDown',
+                'backspace:keydown': '_onBackspace',
+                'del:keydown' : '_onDel' //Currently, del is not firing the event
             },
+
+            /* START 'del' keydown workaround */
+            listeners: {
+                'keydown' : '_onKeyDown'
+            },
+
+            _onKeyDown: function(event){
+                if(event.keyCode === 46)
+                    this._onDel(event);
+            },
+            /* END 'del' keydown workaround */
 
             _onEnter: function (event) {
                 var current = document.activeElement.closest('paper-input'),
@@ -167,28 +179,41 @@ Orderable list
             },
 
             _onDel: function (event) {
+                var current = document.activeElement.closest('paper-input'),
+                    cursorPosition = current.querySelector('input').selectionStart,
+                    index = this.$.repeater.indexForElement(current),
+                    value = current.value;
 
+                if(cursorPosition === value.length && index < this.value.length - 1){
+                    event.preventDefault();
+
+                    this.set('value.' + index, value + this.value[index + 1]);
+                    this.remove(index + 1);
+
+                    this.async(function(){
+                        this.focus(index, value.length);
+                    });
+                }
             },
 
             _onBackspace: function(event){
                 var current = document.activeElement.closest('paper-input'),
                     cursorPosition = current.querySelector('input').selectionStart,
-                    index, value;
+                    index = this.$.repeater.indexForElement(current),
+                    value;
 
-                if(cursorPosition === 0){
+                if(cursorPosition === 0 && index > 0){
                     event.preventDefault();
-                    index = this.$.repeater.indexForElement(current);
-                    if(index > 0){
-                        value = current.value;
-                        this.set('value.' + (index - 1), this.value[index - 1] + value);
-                        this.remove(index);
-                        this.async(function(){
-                            this.focus((index - 1), this.value[index - 1].length - value.length)
-                        });
-                    }
+                    value = current.value;
+                    this.set('value.' + (index - 1), this.value[index - 1] + value);
+                    this.remove(index);
+                    this.async(function(){
+                        this.focus((index - 1), this.value[index - 1].length - value.length)
+                    });
+
+                    this.splice('value', index, 1, value);
                 }
 
-                this.splice('value', index, 1, value);
             },
 
             _onNewValue: function (event) {
@@ -213,6 +238,11 @@ Orderable list
                 }.bind(this));
             },
 
+            _onSortableEnd: function(event){
+                if(event.oldIndex)
+                    this.$.list.querySelectorAll('paper-input')[event.oldIndex].blur();
+            },
+
             add: function (value, index) {
                 if(typeof index === 'undefined' || index === this.$.repeater.items.length)
                     this.push('value', value);
@@ -234,6 +264,12 @@ Orderable list
                 });
             },
 
+
+            /**
+             * Move the focus to an element in the list.
+             * @param index {int|String} Index of the element to focus in the list
+             * @param pos {int|String} Position of the character to focus inside the word
+             */
             focus: function (index, pos) {
                 var current, input;
 
