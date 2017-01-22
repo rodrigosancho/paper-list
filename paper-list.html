@@ -29,7 +29,7 @@ Orderable list
                 opacity: 0.54;
             }
 
-            ::content #list paper-input-container div.floated-label-placeholder{
+            ::content #list paper-input-container div.floated-label-placeholder {
                 line-height: 0px;
             }
 
@@ -42,7 +42,9 @@ Orderable list
 
         <paper-input id="add"
                      label="[[ label ]]"
-                     placeholder="[[ placeholder ]]">
+                     placeholder="[[ placeholder ]]"
+                     required$="[[ required ]]"
+                     error-message="[[ errorMessage ]]">
             <span prefix>
                 <paper-icon-button icon="add"
                                    on-tap="_onNewValue">
@@ -98,7 +100,9 @@ Orderable list
                 uniqueValues: {
                     type: Boolean,
                     value: false
-                }
+                },
+                min: Number,
+                max: Number
             },
 
             behaviors: [
@@ -110,27 +114,27 @@ Orderable list
                 'up:keydown': '_onMoveUp',
                 'down:keydown': '_onMoveDown',
                 'backspace:keydown': '_onBackspace',
-                'del:keydown' : '_onDel' //Currently, del is not firing the event
+                'del:keydown': '_onDel' //Currently, del is not firing the event
             },
 
             /* START 'del' keydown workaround */
             listeners: {
-                'keydown' : '_onKeyDown'
+                'keydown': '_onKeyDown'
             },
 
-            _onKeyDown: function(event){
-                if(event.keyCode === 46)
+            _onKeyDown: function (event) {
+                if (event.keyCode === 46)
                     this._onDel(event);
             },
             /* END 'del' keydown workaround */
 
             _onEnter: function (event) {
                 var current = document.activeElement.closest('paper-input'),
-                        index = this.$.repeater.indexForElement(current),
-                        value = current.value, newValue, cursorPosition;
+                    index = this.$.repeater.indexForElement(current),
+                    value = current.value, newValue, cursorPosition;
 
-                if(value){
-                    if(typeof index === 'undefined'){
+                if (value) {
+                    if (typeof index === 'undefined') {
                         this.add(value);
                         current.value = null;
                         this.focus();
@@ -139,9 +143,9 @@ Orderable list
                         newValue = value.substr(cursorPosition, value.length);
                         this.add(newValue, index + 1);
                         current.value = value.substr(0, cursorPosition);
-                        this.async(function(){
+                        this.async(function () {
                             this.focus(index + 1, 0);
-                        }.bind(this));
+                        }.bind(this), 10); //TODO Repasar
                     }
                 }
             },
@@ -154,11 +158,11 @@ Orderable list
                 //Typically, up key moves the cursor to the beginning of the word.
                 //If the cursor are actually at this point, up key will move the
                 //cursor to the previous element in the list
-                if(cursorPosition === 0){
+                if (cursorPosition === 0) {
                     index = this.$.repeater.indexForElement(current);
-                    if(typeof index != 'undefined' && index > 0) //Focusing the previous element
+                    if (typeof index != 'undefined' && index > 0) //Focusing the previous element
                         this.focus(index - 1);
-                    else if(index === 0)
+                    else if (index === 0)
                         this.focus();
 
                 }
@@ -169,12 +173,12 @@ Orderable list
                     cursorPosition = current.querySelector('input').selectionStart,
                     index = this.$.repeater.indexForElement(current);
 
-                if(current.value && cursorPosition === current.value.length){
-                    if(typeof index != 'undefined' && index < this.$.repeater.items.length - 1) //Focusing the next element
+                if (current.value && cursorPosition === current.value.length) {
+                    if (typeof index != 'undefined' && index < this.$.repeater.items.length - 1) //Focusing the next element
                         this.focus(index + 1);
-                    else if(typeof index === 'undefined' && this.$.repeater.items.length > 0) //Focusing the last element of the list
+                    else if (typeof index === 'undefined' && this.$.repeater.items.length > 0) //Focusing the last element of the list
                         this.focus(0);
-                }else if(!current.value)
+                } else if (!current.value)
                     this.focus(0);
             },
 
@@ -184,34 +188,30 @@ Orderable list
                     index = this.$.repeater.indexForElement(current),
                     value = current.value;
 
-                if(cursorPosition === value.length && index < this.value.length - 1){
+                if (cursorPosition === value.length && index < this.value.length - 1) {
                     event.preventDefault();
-
-                    this.set('value.' + index, value + this.value[index + 1]);
+                    this.update(index, value + this.value[index + 1]);
                     this.remove(index + 1);
-
-                    this.async(function(){
+                    this.async(function () {
                         this.focus(index, value.length);
                     });
                 }
             },
 
-            _onBackspace: function(event){
+            _onBackspace: function (event) {
                 var current = document.activeElement.closest('paper-input'),
                     cursorPosition = current.querySelector('input').selectionStart,
                     index = this.$.repeater.indexForElement(current),
                     value;
 
-                if(cursorPosition === 0 && index > 0){
+                if (cursorPosition === 0 && index > 0) {
                     event.preventDefault();
                     value = current.value;
-                    this.set('value.' + (index - 1), this.value[index - 1] + value);
+                    this.update((index - 1), this.value[index - 1] + value);
                     this.remove(index);
-                    this.async(function(){
+                    this.async(function () {
                         this.focus((index - 1), this.value[index - 1].length - value.length)
-                    });
-
-                    this.splice('value', index, 1, value);
+                    }, 10);
                 }
 
             },
@@ -220,7 +220,7 @@ Orderable list
                 var current = event.target.closest('paper-input'),
                     value = current.value;
 
-                if(value){
+                if (value) {
                     this.add(value);
                     current.value = null;
                     this.focus();
@@ -235,24 +235,30 @@ Orderable list
 
                 this.async(function () {
                     this.focus(index);
-                }.bind(this));
+                }.bind(this), 10);
             },
 
-            _onSortableEnd: function(event){
-                if(event.oldIndex)
+            _onSortableEnd: function (event) {
+                if (event.oldIndex)
                     this.$.list.querySelectorAll('paper-input')[event.oldIndex].blur();
             },
 
-            add: function (value, index) {
-                if(typeof index === 'undefined' || index === this.$.repeater.items.length)
-                    this.push('value', value);
-                else
-                    this.splice('value', index, -1, value);
+            _getValue: function(index){
+                return this.value[index];
+            },
 
-                this.fire('value-added', {
-                    value: value,
-                    index: index || this.value.length
-                });
+            add: function (value, index) {
+//                if(!this.max || this.max > this.value.length){
+                    if (typeof index === 'undefined' || index === this.$.repeater.items.length)
+                        this.push('value', new String(value));
+                    else
+                        this.splice('value', index, 0, new String(value));
+
+                    this.fire('value-added', {
+                        value: value,
+                        index: index || this.value.length
+                    });
+//                }
             },
 
             remove: function (index) {
@@ -260,10 +266,18 @@ Orderable list
 
                 this.fire('value-removed', {
                     value: this.value[index],
-                    index : index
+                    index: index
                 });
             },
 
+            update: function(index, value){
+                this.set('value.' + index, value);
+
+                this.fire('value-updated', {
+                    value: value,
+                    index: index
+                });
+            },
 
             /**
              * Move the focus to an element in the list.
@@ -273,17 +287,16 @@ Orderable list
             focus: function (index, pos) {
                 var current, input;
 
-                if(typeof index === 'undefined' || this.value.length === 0)
+                if (typeof index === 'undefined' || this.value.length === 0)
                     current = this.$.add;
+                else if (index < this.value.length)
+                    current = this.$.list.querySelectorAll('paper-input')[index];
                 else
-                    if (index < this.value.length)
-                        current = this.$.list.querySelectorAll('paper-input')[index];
-                    else
-                        current = this.$.list.querySelectorAll('paper-input')[this.value.length - 1];
+                    current = this.$.list.querySelectorAll('paper-input')[this.value.length - 1];
 
                 current.focus();
 
-                if(typeof pos != 'undefined'){
+                if (typeof pos != 'undefined') {
                     input = current.querySelector('input');
                     input.selectionStart = input.selectionEnd = pos;
                 }
