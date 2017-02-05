@@ -38,14 +38,19 @@ Orderable list
                 margin: 0.5rem;
                 opacity: 0.54;
             }
-
         </style>
 
         <paper-input id="add"
-                     label="[[ label ]]"
-                     placeholder="[[ placeholder ]]"
-                     required$="[[ required ]]"
-                     error-message="[[ errorMessage ]]">
+                     label="[[label]]"
+                     title$="[[title]]"
+                     allowed-pattern="[[allowedPattern]]"
+                     pattern$="[[pattern]]"
+                     prevent-invalid-input="[[preventInvalidInput]]"
+                     validator="[[validator]]"
+                     type$="[[type]]"
+                     placeholder$="[[placeholder]]"
+                     disabled$="[[disabled]]"
+                     readonly$="[[readonly]]">
             <span prefix>
                 <paper-icon-button icon="add"
                                    on-tap="_onNewValue">
@@ -58,10 +63,19 @@ Orderable list
             <template id="repeater"
                       is="dom-repeat"
                       items="{{ value }}">
-                <paper-input value="[[ item ]]"
-                             name="[[ name ]]"
-                             required$="[[ required ]]"
-                             error-message="[[ error-message ]]"
+                <paper-input title$="[[title]]"
+                             allowed-pattern="[[allowedPattern]]"
+                             pattern$="[[pattern]]"
+                             prevent-invalid-input="[[preventInvalidInput]]"
+                             validator="[[validator]]"
+                             type$="[[type]]"
+                             placeholder$="[[placeholder]]"
+                             disabled$="[[disabled]]"
+                             readonly$="[[readonly]]"
+                             required$="[[required]]"
+                             error-message="[[ errorMessage ]]"
+                             value="[[ item ]]"
+                             name$="[[name]]"
                              on-change="_onValueChange">
                     <template is="dom-if" if="{{ sortable }}">
                         <span prefix>
@@ -87,10 +101,19 @@ Orderable list
             is: 'paper-list',
 
             properties: {
-
                 label: String,
                 placeholder: String,
                 name: String,
+                title:String,
+                allowedPattern:String,
+                pattern:String,
+                preventInvalidInput:Boolean,
+                validator:String,
+                type:String,
+                disabled:Boolean,
+                readonly:Boolean,
+                required:Boolean,
+                errorMessage:String,
                 value: {
                     type: Array,
                     value: []
@@ -100,12 +123,8 @@ Orderable list
                     value: false,
                     observer: '_onSortable'
                 },
-                uniqueValues: {
-                    type: Boolean,
-                    value: false
-                },
-                min: Number,
-                max: Number
+//                minLength: Number,
+//                maxLength: Number
             },
 
             behaviors: [
@@ -263,19 +282,16 @@ Orderable list
                     this.importHref(this.resolveUrl('../polymer-sortablejs/polymer-sortablejs.html'), null, null, true);
             },
 
-
             add: function (value, index) {
-//                if(!this.max || this.max > this.value.length){
-                    if (typeof index === 'undefined' || index === this.$.repeater.items.length)
-                        this.push('value', value);
-                    else
-                        this.splice('value', index, 0, value);
+                if (typeof index === 'undefined' || index === this.$.repeater.items.length)
+                    this.push('value', value);
+                else
+                    this.splice('value', index, 0, value);
 
-                    this.fire('value-added', {
-                        value: value,
-                        index: index || this.value.length
-                    });
-//                }
+                this.fire('value-added', {
+                    value: value,
+                    index: index || this.value.length
+                });
             },
 
             remove: function (index) {

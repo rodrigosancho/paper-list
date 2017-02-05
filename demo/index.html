@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
 
@@ -10,31 +10,49 @@
 
     <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
     <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+    <link rel="import" href="../../iron-form/iron-form.html">
+    <link rel="import" href="../../paper-button/paper-button.html">
     <link rel="import" href="../paper-list.html">
 
     <style is="custom-style" include="demo-pages-shared-styles">
     </style>
-  </head>
-  <body>
-    <div class="vertical-section-container centered">
-      <h3>Basic paper-list demo</h3>
-      <demo-snippet>
+</head>
+<body>
+<div class="vertical-section-container centered">
+    <h3>Basic paper-list demo</h3>
+    <demo-snippet>
         <template>
-          <paper-list label="Paper list"
-                      placeholder="Add new value"></paper-list>
+            <paper-list label="Paper list" autocapitalized
+                        placeholder="Add new value"></paper-list>
         </template>
-      </demo-snippet>
-    </div>
-    <div class="vertical-section-container centered">
-      <h3>Sortable paper-list demo</h3>
-      <demo-snippet>
+    </demo-snippet>
+</div>
+<div class="vertical-section-container centered">
+    <h3>Sortable paper-list demo</h3>
+    <demo-snippet>
         <template>
-          <paper-list sortable
-                      label="Paper list"
-                      max="3"
-                      placeholder="Add new value"></paper-list>
+            <paper-list sortable
+                        type="date"
+                        label="Paper list"
+                        placeholder="Add new value"></paper-list>
         </template>
-      </demo-snippet>
-    </div>
-  </body>
+    </demo-snippet>
+</div>
+
+<div class="vertical-section-container centered">
+    <h3>Required paper-list demo</h3>
+    <demo-snippet>
+        <template is="dom-bind"
+                  id="form">
+            <form is="iron-form">
+                <paper-list label="Paper list"
+                            placeholder="Add new value"
+                            required
+                            error-message="You must complete this field"></paper-list>
+                <paper-button on-click="validate">Validate</paper-button>
+            </form>
+        </template>
+    </demo-snippet>
+</div>
+</body>
 </html>
