@@ -1,6 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 
-<link rel="import" href="../polymer-sortablejs/polymer-sortablejs.html">
+
 <link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../iron-icons/iron-icons.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
@@ -20,12 +20,13 @@ Orderable list
                 display: block;
             }
 
-            :host paper-input span {
+            :host paper-input paper-icon-button {
                 transition: opacity .2s ease-out;
                 opacity: 0;
             }
 
-            :host paper-input:hover span {
+            :host paper-input:hover paper-icon-button, :host paper-input[focused] paper-icon-button,
+            :host paper-input paper-icon-button[focused] {
                 opacity: 0.54;
             }
 
@@ -33,7 +34,7 @@ Orderable list
                 line-height: 0px;
             }
 
-            :host paper-input#add span {
+            :host paper-input#add paper-icon-button {
                 margin: 0.5rem;
                 opacity: 0.54;
             }
@@ -57,10 +58,11 @@ Orderable list
             <template id="repeater"
                       is="dom-repeat"
                       items="{{ value }}">
-                <paper-input value="{{ item }}"
+                <paper-input value="[[ item ]]"
                              name="[[ name ]]"
                              required$="[[ required ]]"
-                             error-message="[[ error-message ]]">
+                             error-message="[[ error-message ]]"
+                             on-change="_onValueChange">
                     <template is="dom-if" if="{{ sortable }}">
                         <span prefix>
                             <paper-icon-button class="handler"
@@ -95,7 +97,8 @@ Orderable list
                 },
                 sortable: {
                     type: Boolean,
-                    value: false
+                    value: false,
+                    observer: '_onSortable'
                 },
                 uniqueValues: {
                     type: Boolean,
@@ -247,12 +250,26 @@ Orderable list
                 return this.value[index];
             },
 
+            _onValueChange: function(event){
+                var value = event.target.value;
+                var index = this.$.repeater.indexForElement(event.target.closest('paper-input'));
+
+                if(index >= 0)
+                    this.update(index, value);
+            },
+
+            _onSortable: function(value){
+                if(value)
+                    this.importHref(this.resolveUrl('../polymer-sortablejs/polymer-sortablejs.html'), null, null, true);
+            },
+
+
             add: function (value, index) {
 //                if(!this.max || this.max > this.value.length){
                     if (typeof index === 'undefined' || index === this.$.repeater.items.length)
-                        this.push('value', new String(value));
+                        this.push('value', value);
                     else
-                        this.splice('value', index, 0, new String(value));
+                        this.splice('value', index, 0, value);
 
                     this.fire('value-added', {
                         value: value,
