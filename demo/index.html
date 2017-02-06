@@ -42,14 +42,13 @@
 <div class="vertical-section-container centered">
     <h3>Required paper-list demo</h3>
     <demo-snippet>
-        <template is="dom-bind"
-                  id="form">
-            <form is="iron-form">
+        <template is="dom-bind">
+            <form is="iron-form" id="form">
                 <paper-list label="Paper list"
                             placeholder="Add new value"
                             required
                             error-message="You must complete this field"></paper-list>
-                <paper-button on-click="validate">Validate</paper-button>
+                <paper-button type="submit" on-click="form.validate">Validate</paper-button>
             </form>
         </template>
     </demo-snippet>
