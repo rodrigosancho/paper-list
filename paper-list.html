@@ -20,24 +20,36 @@ Orderable list
                 display: block;
             }
 
+            ::content #list paper-input {
+                @apply(--paper-list-list-input-mixin)
+            }
+
+            ::content #add paper-input {
+                @apply(--paper-list-add-input-mixin)
+            }
+
             :host paper-input paper-icon-button {
                 transition: opacity .2s ease-out;
                 opacity: 0;
+                @apply(--paper-list-button-mixin)
+            }
+
+            :host paper-input#add paper-icon-button {
+                margin: 0.5rem;
+                opacity: var(--paper-list-button-opacity, 0.54);
+                @apply(--paper-list-add-button-mixin)
             }
 
             :host paper-input:hover paper-icon-button, :host paper-input[focused] paper-icon-button,
             :host paper-input paper-icon-button[focused] {
-                opacity: 0.54;
+                opacity: var(--paper-list-button-opacity, 0.54);
             }
 
             ::content #list paper-input-container div.floated-label-placeholder {
                 line-height: 0px;
             }
 
-            :host paper-input#add paper-icon-button {
-                margin: 0.5rem;
-                opacity: 0.54;
-            }
+
         </style>
 
         <paper-input id="add"
@@ -58,8 +70,7 @@ Orderable list
             </span>
         </paper-input>
         <sortable-js id="list"
-                     handle=".handler"
-                     on-end="_onSortableEnd">
+                     handle=".handler">
             <template id="repeater"
                       is="dom-repeat"
                       items="{{ value }}">
@@ -122,9 +133,7 @@ Orderable list
                     type: Boolean,
                     value: false,
                     observer: '_onSortable'
-                },
-//                minLength: Number,
-//                maxLength: Number
+                }
             },
 
             behaviors: [
@@ -153,13 +162,14 @@ Orderable list
             _onEnter: function (event) {
                 var current = document.activeElement.closest('paper-input'),
                     index = this.$.repeater.indexForElement(current),
-                    value = current.value,  cursorPosition;
+                    value = current.value || '', cursorPosition;
 
-                if (value) {
                     if (typeof index === 'undefined') {
-                        this.add(value);
-                        current.value = null;
-                        this.focus();
+                        if(value){
+                            this.add(value);
+                            current.value = null;
+                            this.focus();
+                        }
                     } else {
                         cursorPosition = current.querySelector('input').selectionStart;
                         this.update(value.substr(0, cursorPosition), index);
@@ -168,7 +178,7 @@ Orderable list
                             this.focus(index + 1, 0);
                         }.bind(this), 10); //TODO Repasar
                     }
-                }
+
             },
 
             _onMoveUp: function (event) {
@@ -200,22 +210,22 @@ Orderable list
                     else if (typeof index === 'undefined' && this.$.repeater.items.length > 0) //Focusing the last element of the list
                         this.focus(0);
                 } else if (!current.value)
-                    this.focus(0);
+                    this.focus(index + 1 || 0);
             },
 
             _onDel: function (event) {
                 var current = document.activeElement.closest('paper-input'),
                     cursorPosition = current.querySelector('input').selectionStart,
                     index = this.$.repeater.indexForElement(current),
-                    value = current.value;
+                    value = current.value || '';
 
-                if (cursorPosition === value.length && index < this.value.length - 1) {
+                if (index < this.value.length - 1) {
                     event.preventDefault();
                     this.update(value + this.value[index + 1], index);
                     this.remove(index + 1);
                     this.async(function () {
                         this.focus(index, value.length);
-                    });
+                    }, 10);  //TODO Repasar
                 }
             },
 
@@ -232,7 +242,7 @@ Orderable list
                     this.remove(index);
                     this.async(function () {
                         this.focus((index - 1), this.value[index - 1].length - value.length)
-                    }, 10);
+                    }, 10);  //TODO Repasar
                 }
 
             },
@@ -253,15 +263,9 @@ Orderable list
                     index = this.$.repeater.indexForElement(current);
 
                 this.remove(index);
-
                 this.async(function () {
                     this.focus(index);
-                }.bind(this), 10);
-            },
-
-            _onSortableEnd: function (event) {
-                if (event.oldIndex)
-                    this.$.list.querySelectorAll('paper-input')[event.oldIndex].blur();
+                }, 10); //TODO Repasar
             },
 
             _getValue: function(index){
@@ -281,40 +285,56 @@ Orderable list
                     this.importHref(this.resolveUrl('../polymer-sortablejs/polymer-sortablejs.html'), null, null, true);
             },
 
+            /**
+             * Introduces a new value into a list. If the index param is not defined, the value will be push at the
+             * end of the array
+             * @param {String} value  Value to push in the list
+             * @param {int} index Index where the new value should be added. Optional
+             */
             add: function (value, index) {
                 if (typeof index === 'undefined' || index === this.$.repeater.items.length)
                     this.push('value', value);
                 else
                     this.splice('value', index, 0, value);
 
-                this.fire('value-added', {
-                    value: value,
-                    index: index || this.value.length
-                });
+//                this.fire('value-added', {
+//                    value: value,
+//                    index: index || this.value.length
+//                });
             },
 
+            /**
+             * Removes an elements from the list
+             * @param {int} index Index to remove
+             */
             remove: function (index) {
                 this.splice('value', index, 1);
 
-                this.fire('value-removed', {
-                    value: this.value[index],
-                    index: index
-                });
+//                this.fire('value-removed', {
+//                    value: this.value[index],
+//                    index: index
+//                });
             },
 
-            update: function(value, index){
-                this.set('value.' + index, value);
 
-                this.fire('value-updated', {
-                    value: value,
-                    index: index
-                });
+            /**
+             * Update the value of an element from the list
+             * @param {String} value New value
+             * @param {int} index Index to update
+             */
+            update: function(value, index){
+                this.splice('value', index, 1, value);
+
+//                this.fire('value-updated', {
+//                    value: value,
+//                    index: index
+//                });
             },
 
             /**
              * Move the focus to an element in the list.
-             * @param index {int|String} Index of the element to focus in the list
-             * @param pos {int|String} Position of the character to focus inside the word
+             * @param {int|String} index Index of the element to focus in the list
+             * @param {int|String} pos Position of the character to focus inside the word
              */
             focus: function (index, pos) {
                 var current, input;
